@@ -1,8 +1,8 @@
 # Real estate project
 
-## "A Django-powered platform for buying, selling, and managing real estate listings."
+## A Django-powered platform for buying, selling, and managing real estate listings.
 
-## endpoint for regustration
+## endpoint for registration
 <img width="1365" height="716" alt="image" src="https://github.com/user-attachments/assets/8c867151-82be-4f13-ad55-e689eff07043" />
 
 ## endpoint for login
