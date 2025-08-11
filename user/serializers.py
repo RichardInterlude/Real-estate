@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from . models import Profile
+from . models import *
 from django.contrib.auth.models import User
 from . utils import sendMail
 
@@ -47,20 +47,20 @@ class RegistrationSerializer(serializers.ModelSerializer):
             gender= validated_data['gender'],
             profile_pix = validated_data.get('profile_pix'),
         )
-        if profile.role == 'buyer':
+        if Profile.role == 'buyer':
             sendMail(subject="Welcome to the top Real estate app",
                       message= f"""
                         Hi {Profile.full_name}, i welcome you to the Richard Real estate app. 
                         we are focused on getting you your dream home, with at little stress as possible
                         i hope you can be able to share this feeling with us. 
                 """ )
-        elif profile.role == 'seller':
+        elif Profile.role == 'seller':
             sendMail(subject="Welcome to the top Real estate app",
                      message=f"""
                          Hi {Profile.full_name}, i welcome you to the Richard Real estate app. 
                         we are focused on connecting you to your potential buyers, with as little stress as possible.
                      """)
-        elif profile.role == 'both':
+        elif Profile.role == 'both':
             sendMail(subject=f"{Profile.full_name}  i welcome you to the Richard Real estate app",message="Welcome Buyer & Seller!You have full access to buy and sell.")
         return profile
 
