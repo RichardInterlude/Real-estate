@@ -8,57 +8,8 @@ from . serializers import *
 from django.shortcuts import get_object_or_404
 
 
-class CategorysView(APIView):
-    # create and get Categorys
-    def post(self,request):
-        try:
-           serializers = CategorySerializers(data=request.data)
-           if serializers.is_valid():
-               serializers.save()
-               return Response(serializers.data, status=status.HTTP_201_CREATED)
-           return Response(serializers.errors,status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'Error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-    def get(self,request):
-        try:
-            categorys = Category.object.all()
-            serializers = CategorySerializers(categorys,many=True)
-            return Response(serializers.data,status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'Error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-class CategoryView(APIView):
-    def get(self,request,id):
-        try:
-            category = get_object_or_404(Category,id=id)
-            serializers = CategorySerializers(category)
-            return Response(serializers.data,status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'Error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-    def put(self,request,id):
-        try:
-            category = get_object_or_404(Category,id=id)
-            serializers = CategorySerializers(category,data=request.data,partials= True) 
-            if serializers.is_valid():
-                serializers.save()
-                return Response(serializers.data, status=status.HTTP_201_CREATED)
-            return Response(serializers.errors,status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'Error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def delete(self,request,id):
-        try:
-            category = get_object_or_404(Category,id=id)
-            category.delete()
-            return Response({"Message":f"{category.title} deleted successfully"},status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            return Response({'Error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-# :::: PRODUCT VIEW ::::
-class ListingView(APIView):
+#  :::: CREATE PRODUCT VIEW ::::: 
+class ListingsView(APIView):
     # create and get Products
     def post(self,request):
         try:
@@ -79,7 +30,7 @@ class ListingView(APIView):
 
             serializers = ListingSerializers(data=request.data)
             if serializers.is_valid():
-               serializers.save(owner=request.user)
+               serializers.save(seller=request.user.profile)
                return Response(serializers.data, status=status.HTTP_201_CREATED)
             return Response(serializers.errors,status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -123,30 +74,44 @@ class ListingView(APIView):
 
 # :::: MESSAGE VIEW ::::
 class InquiryView(APIView):
-    def post(self,request):
+    def post(self,request,id):
         try:
+            listing = get_object_or_404(Listing,id=id)
+
             # Check authentication early
             if not request.user.is_authenticated:
-                return Response(
-                    {"error": "Authentication required"}, 
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
+                return Response({"error": "Authentication required"},status=status.HTTP_401_UNAUTHORIZED)
 
-            # Get the user's profile and role
+            # Get the user's profile and role and allowing a 2 way communication
             profile = get_object_or_404(Profile, user=request.user)
-            if profile.role != "buyer":
-                return Response(
-                    {"error": "Only buyers can send messages"}, 
-                    status=status.HTTP_403_FORBIDDEN
-                )
+            if request.user not in [listing.seller,request.user]:
+                return Response({'Message':'User is not allowed into this conversation'},status=status.HTTP_403_FORBIDDEN)
 
             # Create the inquiry (not fetching existing ones)
             serializer = InquirySerializers(data=request.data)
             if serializer.is_valid():
-                serializer.save(sender=request.user)  # assuming Inquiry has sender FK to User
+                serializer.save(sender=request.user,listing=listing,receiver=listing.seller)  # assuming Inquiry has sender FK to User
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
             return Response({'Error':str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def get(self,request):
+        try:
+            if not request.user.is_authenticated():
+                return Response({'Message':"User has to Register"},status=status.HTTP_401_UNAUTHORIZED)
+            
+            profile = get_object_or_404(Profile,user=request.user)
+            if profile.role == 'seller':
+                inquires = Inquiry.objects.filter(listing_seller=request.user)
+            elif profile.role == 'buyer':
+                inquires = Inquiry.objects.filter(sender=request.user)
+            else:
+                return Response({"Error":"Unauthorized role"},status=status.HTTP_403_FORBIDDEN)
+            
+            serializers = InquirySerializers(inquires,many=True)
+        except Exception as e:
+            return Response({"Error":str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

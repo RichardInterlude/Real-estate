@@ -16,7 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSerializer()
-        field = ['full_name','phone','gender','profile_pix']
+        field = ['full_name','phone','gender','profile_pix','role']
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -27,7 +27,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ['full_name','phone','gender','profile_pix','email','username','password','password1']
+        fields = ['full_name','phone','gender','profile_pix','email','username','password','password1','role']
     def validate(self,data):
         if data['password'] != data['password1']:
             raise serializers.ValidationError('password does not match')
@@ -46,22 +46,26 @@ class RegistrationSerializer(serializers.ModelSerializer):
             phone = validated_data['phone'],
             gender= validated_data['gender'],
             profile_pix = validated_data.get('profile_pix'),
+            role = validated_data['role']
         )
-        if Profile.role == 'buyer':
+        if profile.role == 'buyer':
             sendMail(subject="Welcome to the top Real estate app",
+                     email=email,
                       message= f"""
-                        Hi {Profile.full_name}, i welcome you to the Richard Real estate app. 
+                        Hi {profile.full_name}, i welcome you to the Richard Real estate app. 
                         we are focused on getting you your dream home, with at little stress as possible
                         i hope you can be able to share this feeling with us. 
                 """ )
-        elif Profile.role == 'seller':
+        elif profile.role == 'seller':
             sendMail(subject="Welcome to the top Real estate app",
+                     email=email,
                      message=f"""
-                         Hi {Profile.full_name}, i welcome you to the Richard Real estate app. 
+                         Hi {profile.full_name}, i welcome you to the Richard Real estate app. 
                         we are focused on connecting you to your potential buyers, with as little stress as possible.
-                     """)
-        elif Profile.role == 'both':
-            sendMail(subject=f"{Profile.full_name}  i welcome you to the Richard Real estate app",message="Welcome Buyer & Seller!You have full access to buy and sell.")
+                     """
+                    )
+        elif profile.role == 'both':
+            sendMail(subject=f"{profile.full_name}  i welcome you to the Richard Real estate app",message="Welcome Buyer & Seller!You have full access to buy and sell.",email=email)
         return profile
 
 

@@ -3,10 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from django.contrib.auth.models import User
-from . models import Profile
+from . models import *
+from stores.models import *
 from . serializers import *
 from django.contrib.auth import login,logout,authenticate
 from django.shortcuts import get_object_or_404
+from stores.views import InquiryView
 
 class RegistrationView(APIView):
     def post(self,request):
@@ -30,7 +32,6 @@ class RegistrationView(APIView):
         except Exception as e:
             return Response({"Error":str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 class LoginView(APIView):
     def post(self,request):
         try:
@@ -44,7 +45,6 @@ class LoginView(APIView):
         except Exception as e:
             return Response({"error":str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)     
         
-
 class LogoutView(APIView):
     def post(self,request):
         try:
@@ -54,11 +54,14 @@ class LogoutView(APIView):
             return Response({"error":str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
 
 class UserDashboardView(APIView):
-    def get(self,request):
+    def get(self,request,id):
         try:
             user = request.user
             profile = get_object_or_404(Profile,user=user)
             role = profile.role
+            listings = Listing.objects.filter(seller=user)
+            messages = Inquiry.objects.filter(listing__seller=user)
+            inquiry = get_object_or_404
 
             if role == "buyer":
                 data = {"email":user.email,
@@ -70,7 +73,9 @@ class UserDashboardView(APIView):
                 data = {"email":user.email,
                         "full_name":profile.full_name,
                         "profile_pix":profile.profile_pix.url,
-                        "role":profile.role
+                        "role":profile.role,
+                        "active_listings": list(listings.values("title","description","location","price","discount_price","category","is_available","created")),
+                        "pending_messages": list(messages.values("listing","sender","message","timestamp","status")),
                         }
             else :
                 data = {"email":user.email,

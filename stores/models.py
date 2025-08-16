@@ -14,12 +14,6 @@ STATUS = (
     ('unread','Unread'),
 )
 
-class Category(models.Model):
-    title = models.CharField(max_length=50,choices=CATEGORY,default='rent')
-    image = models.ImageField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    def __str__(self):
-       return self.title
     
 class Listing(models.Model):
     title = models.CharField(max_length=255,null=True)
@@ -27,11 +21,11 @@ class Listing(models.Model):
     location = models.CharField(max_length=255)
     price = models.BigIntegerField(null=True)
     discount_price = models.BigIntegerField(null=True)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category = models.CharField(max_length=255,choices=CATEGORY)
     image = models.ImageField(upload_to='listing',null=True)
-    photo1 = models.ImageField(null=True,blank=True)
-    photo2 = models.ImageField(null=True,blank=True)
-    photo3 = models.ImageField(null=True,blank=True)
+    photo1 = models.ImageField(upload_to='listing/photo1',null=True,blank=True)
+    photo2 = models.ImageField(upload_to='listing/photo1',null=True,blank=True)
+    photo3 = models.ImageField(upload_to='listing/photo1',null=True,blank=True)
     review  = models.TextField( null=True)
     rating = models.BigIntegerField(default=0)
     is_available  = models.BooleanField(default=True)
