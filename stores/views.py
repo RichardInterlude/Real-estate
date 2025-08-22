@@ -74,44 +74,47 @@ class ListingView(APIView):
 
 # :::: MESSAGE VIEW ::::
 class InquiryView(APIView):
-    def post(self,request,id):
-        try:
-            listing = get_object_or_404(Listing,id=id)
+    def post(self, request, id):
+        user = request.user
+        if not user.is_authenticated:
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
-            # Check authentication early
-            if not request.user.is_authenticated:
-                return Response({"error": "Authentication required"},status=status.HTTP_401_UNAUTHORIZED)
+        listing = get_object_or_404(Listing, id=id)
+        profile = get_object_or_404(Profile, user=user)
 
-            # Get the user's profile and role and allowing a 2 way communication
-            profile = get_object_or_404(Profile, user=request.user)
-            if request.user not in [listing.seller,request.user]:
-                return Response({'Message':'User is not allowed into this conversation'},status=status.HTTP_403_FORBIDDEN)
+        # Determine recipient based on role
+        if profile.role == "buyer":
+            # Buyer sends inquiry to the seller of this listing
+            recipient_profile = listing.seller
 
-            # Create the inquiry (not fetching existing ones)
-            serializer = InquirySerializers(data=request.data)
-            if serializer.is_valid():
-                serializer.save(sender=request.user,listing=listing,receiver=listing.seller)  # assuming Inquiry has sender FK to User
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        elif profile.role == "seller":
+            # Seller must specify which buyer they are replying to
+            buyer_id = request.data.get("buyer_id")
+            if not buyer_id:
+                return Response(
+                    {"error": "buyer_id required when seller replies"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            recipient_profile = get_object_or_404(Profile, id=buyer_id)
 
-        except Exception as e:
-            return Response({'Error':str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-    def get(self,request):
-        try:
-            if not request.user.is_authenticated():
-                return Response({'Message':"User has to Register"},status=status.HTTP_401_UNAUTHORIZED)
-            
-            profile = get_object_or_404(Profile,user=request.user)
-            if profile.role == 'seller':
-                inquires = Inquiry.objects.filter(listing_seller=request.user)
-            elif profile.role == 'buyer':
-                inquires = Inquiry.objects.filter(sender=request.user)
-            else:
-                return Response({"Error":"Unauthorized role"},status=status.HTTP_403_FORBIDDEN)
-            
-            serializers = InquirySerializers(inquires,many=True)
-        except Exception as e:
-            return Response({"Error":str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        else:
+            return Response(
+                {"error": "Invalid role"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Save inquiry
+        serializer = InquirySerializers(data=request.data)
+        if serializer.is_valid():
+            serializer.save(
+                sender=profile,
+                recipient=recipient_profile,
+                listing=listing
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

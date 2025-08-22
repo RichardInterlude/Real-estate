@@ -8,12 +8,6 @@ CATEGORY = (
     ('rent','Rent'),
     ('apartment','Apartment'),
 )
-
-STATUS = (
-    ('read','Read'),
-    ('unread','Unread'),
-)
-
     
 class Listing(models.Model):
     title = models.CharField(max_length=255,null=True)
@@ -36,11 +30,13 @@ class Listing(models.Model):
        return self.title
 
 class Inquiry(models.Model):
-    listing = models.ForeignKey(Listing, on_delete=models.CASCADE)
-    sender = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE,null=True,blank=True)
+    sender = models.ForeignKey(Profile, related_name="sent_inquiries", on_delete=models.CASCADE)
+    recipient = models.ForeignKey(Profile, related_name="received_inquiries", on_delete=models.CASCADE,default=True)
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now=True)
-    status = models.CharField(max_length=255,choices=STATUS,default='unread')
+    is_read = models.BooleanField(default=False)
+
 
     def __str__(self):
         return f'Message was sent by {self.sender} about {self.listing} by {self.timestamp}'

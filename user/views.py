@@ -1,11 +1,11 @@
-from rest_framework import status,serializers
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from django.contrib.auth.models import User
 from . models import *
 from stores.models import *
 from . serializers import *
+from stores.serializers import InquirySerializers
 from django.contrib.auth import login,logout,authenticate
 from django.shortcuts import get_object_or_404
 from stores.views import InquiryView
@@ -56,33 +56,41 @@ class LogoutView(APIView):
 class UserDashboardView(APIView):
     def get(self,request,id):
         try:
+            # verify if the user is authenticated
             user = request.user
+            if not user.is_authenticated:
+                return Response(
+                    {"error": "Authentication required"},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            # Get the profile and listing based on id
             profile = get_object_or_404(Profile,user=user)
-            role = profile.role
-            listings = Listing.objects.filter(seller=user)
-            messages = Inquiry.objects.filter(listing__seller=user)
-            inquiry = get_object_or_404
+            listing = get_object_or_404(Listing,id=id)
 
-            if role == "buyer":
-                data = {"email":user.email,
-                        "full_name":profile.full_name,
-                        "profile_pix":profile.profile_pix.url,
-                        "role":profile.role
-                        }
-            elif role == "seller":
-                data = {"email":user.email,
+            # This is the common field between buyer, seller and user
+            data = {"email":user.email,
                         "full_name":profile.full_name,
                         "profile_pix":profile.profile_pix.url,
                         "role":profile.role,
-                        "active_listings": list(listings.values("title","description","location","price","discount_price","category","is_available","created")),
-                        "pending_messages": list(messages.values("listing","sender","message","timestamp","status")),
                         }
-            else :
-                data = {"email":user.email,
-                        "full_name":profile.full_name,
-                        "profile_pix":profile.profile_pix.url,
-                        "role":profile.role}
-            return Response(data)
+            # this is to get the messages of the buyer or the seller
+            buyer_inquiry = Inquiry.objects.filter(
+                    listing_seller=request.user,
+                    listing=listing
+                )
+            seller_inquiry = Inquiry.objects.filter(
+                    sender=request.user,
+                     listing=listing
+            )
+            # this is to assign what message to another
+            if buyer_inquiry.exists():
+                data['buyer_inquiry'] = InquirySerializers(buyer_inquiry,many=True).data
+
+            if seller_inquiry.exists():
+                data['seller_inquiry'] = InquirySerializers(seller_inquiry,many=True).data
+
+            return Response(data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"message":str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
