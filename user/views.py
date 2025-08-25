@@ -80,9 +80,10 @@ class UserDashboardView(APIView):
                     listing=listing
                 )
             seller_inquiry = Inquiry.objects.filter(
-                    sender=request.user,
+                    sender=listing.seller,
                      listing=listing
             )
+
             # this is to assign what message to another
             if buyer_inquiry.exists():
                 data['buyer_inquiry'] = InquirySerializers(buyer_inquiry,many=True).data

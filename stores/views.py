@@ -45,9 +45,9 @@ class ListingsView(APIView):
             return Response({'Error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
       
 class ListingView(APIView):
-    def get(self,request,id):
+    def get(self,request,slug):
         try:
-            listing = get_object_or_404(Listing,id=id)
+            listing = get_object_or_404(Listing,slug=slug)
             serializers = ListingSerializers(listing)
             return Response(serializers.data,status=status.HTTP_200_OK)
         except Exception as e:
