@@ -8,7 +8,7 @@ from . serializers import *
 from stores.serializers import InquirySerializers
 from django.contrib.auth import login,logout,authenticate
 from django.shortcuts import get_object_or_404
-from stores.views import InquiryView
+
 
 class RegistrationView(APIView):
     def post(self,request):
@@ -63,6 +63,11 @@ class UserDashboardView(APIView):
                     {"error": "Authentication required"},
                     status=status.HTTP_401_UNAUTHORIZED
                 )
+            """if not user.login:
+                return Response(
+                    {"error":"User has to be logged in"},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )"""
             
             # Get the profile and listing based on id
             profile = get_object_or_404(Profile,user=user)
