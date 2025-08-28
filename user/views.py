@@ -63,12 +63,6 @@ class UserDashboardView(APIView):
                     {"error": "Authentication required"},
                     status=status.HTTP_401_UNAUTHORIZED
                 )
-            """if not user.login:
-                return Response(
-                    {"error":"User has to be logged in"},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )"""
-            
             # Get the profile and listing based on id
             profile = get_object_or_404(Profile,user=user)
             listing = get_object_or_404(Listing,id=id)
