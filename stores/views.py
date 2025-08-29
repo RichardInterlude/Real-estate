@@ -51,7 +51,6 @@ class ListingView(APIView):
             return Response(serializers.data,status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'Error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
     def put(self,request,slug):
         try:
             listing = get_object_or_404(Listing,slug=slug)
@@ -63,14 +62,14 @@ class ListingView(APIView):
         except Exception as e:
             return Response({'Error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def delete(self,request,id):
+    def delete(self,request,slug):
         try:
-            listing = get_object_or_404(Listing,id=id)
+            listing = get_object_or_404(Listing,slug=slug)
             listing.delete()
             return Response({"Message":f"{listing.title} deleted successfully"},status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({'Error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        
 # :::: MESSAGE VIEW ::::
 class InquiryView(APIView):
     def post(self, request, id):
