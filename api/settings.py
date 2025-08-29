@@ -17,7 +17,7 @@ SECRET_KEY = str(os.getenv('SECRET_KEY'))
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["https://real-estate-wuf8.onrender.com","http://real-estate-wuf8.onrender.com","real-estate-wuf8.onrender.com"]
+ALLOWED_HOSTS = ["https://real-estate-wuf8.onrender.com","http://real-estate-wuf8.onrender.com","real-estate-wuf8.onrender.com",'127.0.0.1']
 
 
 # Application definition

@@ -52,9 +52,9 @@ class ListingView(APIView):
         except Exception as e:
             return Response({'Error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-    def put(self,request,id):
+    def put(self,request,slug):
         try:
-            listing = get_object_or_404(Listing,id=id)
+            listing = get_object_or_404(Listing,slug=slug)
             serializers = ListingSerializers(listing,data=request.data,partial= True) 
             if serializers.is_valid():
                 serializers.save()
