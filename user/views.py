@@ -75,7 +75,7 @@ class UserDashboardView(APIView):
                         }
             # this is to get the messages of the buyer or the seller
             buyer_inquiry = Inquiry.objects.filter(
-                    listing__seller=request.user,
+                    listing__seller=profile,
                     listing=listing
                 )
             seller_inquiry = Inquiry.objects.filter(
